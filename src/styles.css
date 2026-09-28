@@ -1,0 +1,73 @@
+/* Classes used by the app
+
+   Menu page:  .menu-page .header .table-label .loading .category
+               .item .item-soldout .item-info .item-name .item-desc .item-price
+               .sold-out .qty .btn .btn-secondary
+               .cart-bar (position: fixed; bottom: 0)
+               .cart-panel .cart-line .cart-total .note .error .success
+
+   Staff page: .staff-login .staff-page .staff-top
+               .order .order-new .order-preparing .order-head
+               .order-note .order-total
+
+   Admin page: .admin-login .admin-page .admin-top .admin-form .admin-msg
+               .admin-category .admin-item .admin-item-info .admin-item-actions
+*/
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #faf6f0; color: #2c1a10; }
+h1, h2 { margin: 0; }
+input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; border-radius: 8px; width: 100%; margin-bottom: 10px; background: #fff; }
+
+/* buttons (shared) */
+.btn { background: #993c1d; color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; cursor: pointer; }
+.btn:disabled { opacity: 0.6; }
+.btn-secondary { background: #fff; color: #2c1a10; border: 1px solid #d9cfc4; border-radius: 8px; padding: 8px 14px; font: inherit; cursor: pointer; }
+.error { color: #a32d2d; }
+.loading { padding: 16px; text-align: center; }
+
+/* menu page */
+.menu-page { max-width: 480px; margin: 0 auto; padding-bottom: 90px; }
+.header { background: #993c1d; color: #fff; text-align: center; padding: 18px 16px; }
+.table-label { margin: 6px 0 0; font-size: 13px; }
+.category { padding: 12px 16px 0; }
+.category h2 { font-size: 16px; margin-bottom: 8px; }
+.item { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #fff; border: 1px solid #eadfd3; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+.item-info { display: flex; flex-direction: column; }
+.item-desc { margin: 2px 0 6px; font-size: 13px; color: #6b5b50; line-height: 1.4; }
+.item-price { font-size: 14px; }
+.item-soldout { opacity: 0.55; }
+.sold-out { font-size: 13px; color: #a32d2d; white-space: nowrap; }
+.qty { display: flex; align-items: center; gap: 10px; }
+.qty button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #d9cfc4; background: #fff; font-size: 16px; cursor: pointer; }
+
+.cart-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; max-width: 456px; margin: 0 auto; display: flex; justify-content: space-between; background: #4a1b0c; color: #fff; padding: 16px; border-radius: 12px; cursor: pointer; }
+.cart-panel { position: fixed; inset: 0; background: #faf6f0; padding: 20px 16px; overflow-y: auto; max-width: 480px; margin: 0 auto; }
+.cart-line { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eadfd3; }
+.cart-total { font-weight: 500; margin: 14px 0; }
+.note { min-height: 70px; margin-top: 14px; }
+.cart-panel .btn, .cart-panel .btn-secondary { width: 100%; margin-top: 8px; }
+.success { text-align: center; padding: 60px 20px; }
+
+/* staff page */
+.staff-login, .admin-login { max-width: 360px; margin: 60px auto; padding: 0 16px; }
+.staff-login h2, .admin-login h2 { margin-bottom: 14px; }
+.staff-page, .admin-page { max-width: 720px; margin: 0 auto; padding: 16px; }
+.staff-top, .admin-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.staff-top h1, .admin-top h1 { font-size: 20px; }
+.order { background: #fff; border: 1px solid #eadfd3; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.order-new { border-left: 5px solid #993c1d; }
+.order-preparing { border-left: 5px solid #ba7517; }
+.order-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.order ul { margin: 6px 0; padding-left: 18px; }
+.order-note { font-style: italic; }
+.order-total { margin: 8px 0; font-weight: 500; }
+
+/* admin page */
+.admin-form { background: #fff; border: 1px solid #eadfd3; border-radius: 12px; padding: 14px; margin-bottom: 20px; }
+.admin-form h2 { font-size: 16px; margin-bottom: 10px; }
+.admin-form .btn, .admin-form .btn-secondary { margin-right: 8px; }
+.admin-msg { color: #3b6d11; }
+.admin-category { margin-bottom: 16px; }
+.admin-category h2 { font-size: 16px; margin-bottom: 8px; }
+.admin-item { background: #fff; border: 1px solid #eadfd3; border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+.admin-item-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
