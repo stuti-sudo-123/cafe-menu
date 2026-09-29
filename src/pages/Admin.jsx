@@ -95,10 +95,12 @@ export default function Admin() {
 
   if (!ready) return <p className="loading">Loading...</p>;
 
-  if (!session) {
-    return (
-      <div className="admin-login">
-        <h2>Admin login</h2>
+if (!session) {
+  return (
+    <div className="admin-login">
+      <div className="auth-logo">cafe</div>
+      <div className="auth-logo-sub">COFFEE BEANS</div>
+      <h2>Admin login</h2>
         <input
           type="email"
           placeholder="admin@yourcafe.com"

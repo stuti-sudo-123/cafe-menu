@@ -176,11 +176,71 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .success { text-align: center; padding: 60px 20px; }
 
 /* staff page */
-.staff-login, .admin-login { max-width: 360px; margin: 60px auto; padding: 0 16px; }
-.staff-login h2, .admin-login h2 { margin-bottom: 14px; }
-.staff-page, .admin-page { max-width: 720px; margin: 0 auto; padding: 16px; }
-.staff-top, .admin-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.staff-top h1, .admin-top h1 { font-size: 20px; }
+/* shared login look (staff + admin) */
+.staff-login, .admin-login {
+  max-width: 360px; margin: 0 auto; min-height: 100vh;
+  padding: 60px 20px 20px; background: #e8d5c8;
+  text-align: center;
+}
+.auth-logo { font-size: 34px; font-weight: 600; letter-spacing: 2px; color: #4a2c14; }
+.auth-logo-sub { font-size: 10px; letter-spacing: 4px; color: #6b5b50; margin: 4px 0 24px; }
+.staff-login h2, .admin-login h2 { margin-bottom: 14px; color: #3a2210; }
+.staff-login input, .admin-login input { text-align: left; }
+.staff-login .btn, .admin-login .btn { width: 100%; margin-top: 4px; }
+
+/* shared app-page look (staff + admin, once logged in) */
+.staff-page, .admin-page {
+  max-width: 720px; margin: 0 auto; padding: 16px;
+  min-height: 100vh; background: #faf3ec;
+}
+.staff-top, .admin-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e3cdb8;
+}
+.staff-top h1, .admin-top h1 { font-size: 20px; color: #3a2210; }
+
+/* staff order cards */
+.order {
+  background: #fff; border: 1px solid #eadfd3; border-radius: 14px;
+  padding: 14px; margin-bottom: 12px;
+}
+.order-new { border-left: 5px solid #993c1d; }
+.order-preparing { border-left: 5px solid #ba7517; }
+.order-head { display: flex; justify-content: space-between; margin-bottom: 6px; color: #3a2210; }
+.order ul { margin: 6px 0; padding-left: 18px; color: #3a2210; }
+.order-note { font-style: italic; color: #6b5b50; }
+.order-total { margin: 8px 0; font-weight: 600; color: #3a2210; }
+
+/* admin form + list */
+.admin-form {
+  background: #fff; border: 1px solid #eadfd3; border-radius: 14px;
+  padding: 16px; margin-bottom: 22px;
+}
+.admin-form h2 { font-size: 16px; margin-bottom: 10px; color: #3a2210; }
+.admin-form .btn, .admin-form .btn-secondary { margin-right: 8px; margin-top: 4px; }
+.admin-msg { color: #3b6d11; margin: 6px 0; }
+.admin-category { margin-bottom: 18px; }
+.admin-category h2 {
+  font-size: 15px; font-weight: 600; color: #3a2210;
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #e3cdb8;
+}
+.admin-item {
+  background: #fff; border: 1px solid #eadfd3; border-radius: 12px;
+  padding: 12px; margin-bottom: 8px;
+}
+.admin-item-info { color: #3a2210; }
+.admin-item-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+/* order placed screen */
+.success {
+  max-width: 430px; margin: 0 auto; min-height: 100vh;
+  background: #e8d5c8; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  padding: 20px;
+}
+.success h2 { color: #4a2c14; font-size: 24px; margin-bottom: 8px; }
+.success p { color: #6b5b50; margin-bottom: 20px; }
+.success .btn { padding: 12px 24px; }
 .order { background: #fff; border: 1px solid #eadfd3; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
 .order-new { border-left: 5px solid #993c1d; }
 .order-preparing { border-left: 5px solid #ba7517; }
@@ -188,16 +248,6 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .order ul { margin: 6px 0; padding-left: 18px; }
 .order-note { font-style: italic; }
 .order-total { margin: 8px 0; font-weight: 500; }
-
-/* admin page */
-.admin-form { background: #fff; border: 1px solid #eadfd3; border-radius: 12px; padding: 14px; margin-bottom: 20px; }
-.admin-form h2 { font-size: 16px; margin-bottom: 10px; }
-.admin-form .btn, .admin-form .btn-secondary { margin-right: 8px; }
-.admin-msg { color: #3b6d11; }
-.admin-category { margin-bottom: 16px; }
-.admin-category h2 { font-size: 16px; margin-bottom: 8px; }
-.admin-item { background: #fff; border: 1px solid #eadfd3; border-radius: 12px; padding: 12px; margin-bottom: 8px; }
-.admin-item-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
 .welcome { max-width: 430px; margin: 0 auto; min-height: 100vh; background: #e8d5c8; color: #3a2210; display: flex; flex-direction: column; }
 .welcome-header { background: #4a2c14; color: #fff; text-align: center; padding: 26px 16px 22px; }

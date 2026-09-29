@@ -47,10 +47,12 @@ export default function Staff() {
 
   if (!ready) return <p className="loading">Loading...</p>;
 
-  if (!session) {
-    return (
-      <div className="staff-login">
-        <h2>Staff login</h2>
+if (!session) {
+  return (
+    <div className="staff-login">
+      <div className="auth-logo">cafe</div>
+      <div className="auth-logo-sub">COFFEE BEANS</div>
+      <h2>Staff login</h2>
         <input
           type="email"
           placeholder="Email"
