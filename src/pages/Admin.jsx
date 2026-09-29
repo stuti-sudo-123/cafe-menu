@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase.js";
 
-const EMPTY = { name: "", price: "", description: "", category: "" };
+const EMPTY = { name: "", price: "", description: "", category: "", image: "" };
 
 export default function Admin() {
   const [session, setSession] = useState(null);
@@ -13,6 +13,7 @@ export default function Admin() {
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const [msg, setMsg] = useState("");
+  const [adminSearch, setAdminSearch] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -54,6 +55,7 @@ export default function Admin() {
       category: form.category.trim(),
       description: form.description.trim() || null,
       price,
+      image: form.image || null,
     };
     const { error } = editingId
       ? await supabase.from("menu_items").update(payload).eq("id", editingId)
@@ -77,9 +79,24 @@ export default function Admin() {
       price: String(item.price),
       description: item.description || "",
       category: item.category,
+      image: item.image || "",
     });
     setMsg("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function uploadImage(file) {
+    setMsg("Uploading photo...");
+    const ext = file.name.split(".").pop();
+    const path = `${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("menu-images").upload(path, file);
+    if (error) {
+      setMsg("Couldn't upload the photo. Try a smaller image.");
+      return;
+    }
+    const { data } = supabase.storage.from("menu-images").getPublicUrl(path);
+    setForm((f) => ({ ...f, image: data.publicUrl }));
+    setMsg("Photo uploaded.");
   }
 
   async function toggle(item) {
@@ -95,12 +112,12 @@ export default function Admin() {
 
   if (!ready) return <p className="loading">Loading...</p>;
 
-if (!session) {
-  return (
-    <div className="admin-login">
-      <div className="auth-logo">cafe</div>
-      <div className="auth-logo-sub">COFFEE BEANS</div>
-      <h2>Admin login</h2>
+  if (!session) {
+    return (
+      <div className="admin-login">
+        <div className="auth-logo">cafe</div>
+        <div className="auth-logo-sub">COFFEE BEANS</div>
+        <h2>Admin login</h2>
         <input
           type="email"
           placeholder="admin@yourcafe.com"
@@ -119,7 +136,10 @@ if (!session) {
     );
   }
 
-  const categories = [...new Set(items.map((i) => i.category))];
+  const filteredItems = items.filter((i) =>
+    i.name.toLowerCase().includes(adminSearch.toLowerCase())
+  );
+  const categories = [...new Set(filteredItems.map((i) => i.category))];
 
   return (
     <div className="admin-page">
@@ -157,6 +177,20 @@ if (!session) {
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
+
+        <label className="image-upload">
+          {form.image ? (
+            <img src={form.image} alt="Preview" className="image-preview" />
+          ) : (
+            <span>Tap to add a photo</span>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => e.target.files[0] && uploadImage(e.target.files[0])}
+          />
+        </label>
+
         {msg && <p className="admin-msg">{msg}</p>}
         <button className="btn" onClick={save}>
           {editingId ? "Save changes" : "Add item"}
@@ -171,12 +205,26 @@ if (!session) {
         )}
       </div>
 
+      <div className="admin-search">
+        <span className="search-icon">🔍</span>
+        <input
+          placeholder="Search items"
+          value={adminSearch}
+          onChange={(e) => setAdminSearch(e.target.value)}
+        />
+      </div>
+
+      {categories.length === 0 && (
+        <p className="loading">No items match "{adminSearch}".</p>
+      )}
+
       {categories.map((cat) => (
         <section key={cat} className="admin-category">
           <h2>{cat}</h2>
-          {items.filter((i) => i.category === cat).map((item) => (
+          {filteredItems.filter((i) => i.category === cat).map((item) => (
             <div key={item.id} className="admin-item">
               <div className="admin-item-info">
+                {item.image && <img src={item.image} alt="" className="admin-item-thumb" />}
                 <strong>{item.name}</strong> · ₹{item.price}
                 {!item.available && <span className="sold-out"> Sold out</span>}
               </div>
