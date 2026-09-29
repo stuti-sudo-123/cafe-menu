@@ -1,18 +1,18 @@
-/* Classes used by the app
+  /* Classes used by the app
 
-   Menu page:  .menu-page .header .table-label .loading .category
-               .item .item-soldout .item-info .item-name .item-desc .item-price
-               .sold-out .qty .btn .btn-secondary
-               .cart-bar (position: fixed; bottom: 0)
-               .cart-panel .cart-line .cart-total .note .error .success
+    Menu page:  .menu-page .header .table-label .loading .category
+                .item .item-soldout .item-info .item-name .item-desc .item-price
+                .sold-out .qty .btn .btn-secondary
+                .cart-bar (position: fixed; bottom: 0)
+                .cart-panel .cart-line .cart-total .note .error .success
 
-   Staff page: .staff-login .staff-page .staff-top
-               .order .order-new .order-preparing .order-head
-               .order-note .order-total
+    Staff page: .staff-login .staff-page .staff-top
+                .order .order-new .order-preparing .order-head
+                .order-note .order-total
 
-   Admin page: .admin-login .admin-page .admin-top .admin-form .admin-msg
-               .admin-category .admin-item .admin-item-info .admin-item-actions
-*/
+    Admin page: .admin-login .admin-page .admin-top .admin-form .admin-msg
+                .admin-category .admin-item .admin-item-info .admin-item-actions
+  */
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, sans-serif; background: #faf6f0; color: #2c1a10; }
 h1, h2 { margin: 0; }
