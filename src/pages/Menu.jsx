@@ -8,10 +8,13 @@ export default function Menu() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [cart, setCart] = useState({}); // { itemId: quantity }
+  const [cart, setCart] = useState({});
   const [note, setNote] = useState("");
   const [showCart, setShowCart] = useState(false);
-  const [status, setStatus] = useState("idle"); // idle | sending | done | error
+  const [status, setStatus] = useState("idle");
+  const [search, setSearch] = useState("");
+  const [activeCat, setActiveCat] = useState("All");
+  const [favs, setFavs] = useState({});
 
   useEffect(() => {
     async function loadMenu() {
@@ -27,7 +30,17 @@ export default function Menu() {
     loadMenu();
   }, []);
 
-  const categories = [...new Set(items.map((i) => i.category))];
+const categories = ["All", "Popular", "Favourite", ...new Set(items.map((i) => i.category))];
+
+const visible = items.filter((i) => {
+  const inCat =
+    activeCat === "All" ? true :
+    activeCat === "Popular" ? i.popular :
+    activeCat === "Favourite" ? favs[i.id] :
+    i.category === activeCat;
+  const inSearch = i.name.toLowerCase().includes(search.toLowerCase());
+  return inCat && inSearch;
+});
 
   const change = (id, delta) =>
     setCart((c) => {
@@ -37,6 +50,8 @@ export default function Menu() {
       else next[id] = qty;
       return next;
     });
+
+  const toggleFav = (id) => setFavs((f) => ({ ...f, [id]: !f[id] }));
 
   const lines = items
     .filter((i) => cart[i.id])
@@ -52,9 +67,8 @@ export default function Menu() {
       total,
       note,
     });
-    if (error) {
-      setStatus("error");
-    } else {
+    if (error) setStatus("error");
+    else {
       setCart({});
       setNote("");
       setShowCart(false);
@@ -67,9 +81,7 @@ export default function Menu() {
       <div className="success">
         <h2>Order placed!</h2>
         <p>Table {table} — we'll bring it over shortly.</p>
-        <button className="btn" onClick={() => setStatus("idle")}>
-          Order more
-        </button>
+        <button className="btn" onClick={() => setStatus("idle")}>Order more</button>
       </div>
     );
   }
@@ -77,42 +89,73 @@ export default function Menu() {
   return (
     <div className="menu-page">
       <header className="header">
-        <h1>My Cafe</h1>
-        <p className="table-label">Table {table}</p>
+        <div className="header-logo">cafe</div>
+        <div className="header-logo-sub">COFFEE BEANS</div>
       </header>
+
+      <div className="search-bar">
+        <span className="search-icon">🔍</span>
+        <input
+          placeholder="Search menu"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <p className="cat-label">Categories</p>
+      <div className="cat-tabs">
+        {categories.map((c) => (
+          <button
+            key={c}
+            className={`cat-chip${c === activeCat ? " cat-chip-active" : ""}`}
+            onClick={() => setActiveCat(c)}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
 
       {loading && <p className="loading">Loading menu...</p>}
       {loadError && <p className="error">Couldn't load the menu. Refresh to try again.</p>}
 
-      {categories.map((cat) => (
-        <section key={cat} className="category">
-          <h2>{cat}</h2>
-          {items
-            .filter((i) => i.category === cat)
-            .map((item) => (
-              <div key={item.id} className={`item${item.available ? "" : " item-soldout"}`}>
-                <div className="item-info">
-                  <strong className="item-name">{item.name}</strong>
-                  {item.description && <p className="item-desc">{item.description}</p>}
-                  <span className="item-price">₹{item.price}</span>
-                </div>
-                {!item.available ? (
-                  <span className="sold-out">Sold out</span>
-                ) : cart[item.id] ? (
-                  <div className="qty">
-                    <button onClick={() => change(item.id, -1)}>−</button>
-                    <span>{cart[item.id]}</span>
-                    <button onClick={() => change(item.id, 1)}>+</button>
-                  </div>
-                ) : (
-                  <button className="btn" onClick={() => change(item.id, 1)}>
-                    Add
-                  </button>
-                )}
-              </div>
-            ))}
-        </section>
+{Object.entries(
+  visible.reduce((groups, item) => {
+    (groups[item.category] = groups[item.category] || []).push(item);
+    return groups;
+  }, {})
+).map(([cat, catItems]) => (
+  <section key={cat} className="menu-section">
+    <h2 className="menu-section-title">{cat}</h2>
+    <div className="item-grid">
+      {catItems.map((item) => (
+        <div key={item.id} className={`item-card${item.available ? "" : " item-card-soldout"}`}>
+          <div className="item-card-img">
+            {item.image ? <img src={item.image} alt={item.name} /> : <span>🥤</span>}
+            <button className="fav-btn" onClick={() => toggleFav(item.id)}>
+              {favs[item.id] ? "❤️" : "🤍"}
+            </button>
+          </div>
+          <div className="item-card-info">
+            <strong>{item.name}</strong>
+            {item.description && <p className="item-desc">{item.description}</p>}
+            <span className="item-price">₹{item.price}</span>
+          </div>
+          {!item.available ? (
+            <span className="sold-out">Sold out</span>
+          ) : cart[item.id] ? (
+            <div className="qty qty-card">
+              <button onClick={() => change(item.id, -1)}>−</button>
+              <span>{cart[item.id]}</span>
+              <button onClick={() => change(item.id, 1)}>+</button>
+            </div>
+          ) : (
+            <button className="add-fab" onClick={() => change(item.id, 1)}>+</button>
+          )}
+        </div>
       ))}
+    </div>
+  </section>
+))}
 
       {count > 0 && !showCart && (
         <div className="cart-bar" onClick={() => setShowCart(true)}>
@@ -123,11 +166,24 @@ export default function Menu() {
 
       {showCart && (
         <div className="cart-panel">
-          <h2>Your order</h2>
+          <div className="cart-top">
+            <button className="cart-back" onClick={() => setShowCart(false)}>←</button>
+            <h2>My cart</h2>
+          </div>
           {lines.map((l) => (
             <div key={l.id} className="cart-line">
-              <span>{l.name} × {l.qty}</span>
-              <span>₹{l.qty * Number(l.price)}</span>
+              <div className="cart-line-icon">
+                {l.image ? <img src={l.image} alt={l.name} /> : "🥤"}
+              </div>
+              <div className="cart-line-info">
+                <strong>{l.name}</strong>
+                <span className="cart-line-price">₹{l.price}</span>
+              </div>
+              <div className="qty">
+                <button onClick={() => change(l.id, 1)}>+</button>
+                <span>{l.qty}</span>
+                <button onClick={() => change(l.id, -1)}>−</button>
+              </div>
             </div>
           ))}
           <textarea
@@ -136,15 +192,13 @@ export default function Menu() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
-          <div className="cart-total">Total: ₹{total}</div>
-          {status === "error" && (
-            <p className="error">Couldn't send order. Please try again.</p>
-          )}
-          <button className="btn" onClick={placeOrder} disabled={status === "sending"}>
-            {status === "sending" ? "Sending..." : "Place order"}
-          </button>
-          <button className="btn-secondary" onClick={() => setShowCart(false)}>
-            Back to menu
+          <div className="cart-summary">
+            <div className="cart-summary-row"><span>Cart</span><span>₹{total}</span></div>
+            <div className="cart-summary-row cart-summary-total"><span>Total</span><span>₹{total}</span></div>
+          </div>
+          {status === "error" && <p className="error">Couldn't send order. Please try again.</p>}
+          <button className="checkout-btn" onClick={placeOrder} disabled={status === "sending"}>
+            {status === "sending" ? "Sending..." : "Check Out"}
           </button>
         </div>
       )}
