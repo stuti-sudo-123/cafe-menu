@@ -312,6 +312,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   transform: scale(0.98);
   background: #27170b;
 }
+
 .image-upload {
   display: flex; align-items: center; justify-content: center;
   height: 100px; border: 1px dashed #d9cfc4; border-radius: 10px;
