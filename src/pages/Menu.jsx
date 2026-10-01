@@ -30,17 +30,19 @@ export default function Menu() {
     loadMenu();
   }, []);
 
-const categories = ["All", "Popular", "Favourite", ...new Set(items.map((i) => i.category))];
+  const categories = ["All", "Popular", "Favourite", ...new Set(items.map((i) => i.category))];
 
-const visible = items.filter((i) => {
-  const inCat =
-    activeCat === "All" ? true :
-    activeCat === "Popular" ? i.popular :
-    activeCat === "Favourite" ? favs[i.id] :
-    i.category === activeCat;
-  const inSearch = i.name.toLowerCase().includes(search.toLowerCase());
-  return inCat && inSearch;
-});
+  const visible = items.filter((i) => {
+    const inCat =
+      activeCat === "All" ? true :
+      activeCat === "Popular" ? i.popular :
+      activeCat === "Favourite" ? favs[i.id] :
+      i.category === activeCat;
+    const inSearch = i.name.toLowerCase().includes(search.toLowerCase());
+    return inCat && inSearch;
+  });
+
+  const popularItems = items.filter((i) => i.popular && i.available);
 
   const change = (id, delta) =>
     setCart((c) => {
@@ -79,9 +81,17 @@ const visible = items.filter((i) => {
   if (status === "done") {
     return (
       <div className="success">
-        <h2>Order placed!</h2>
-        <p>Table {table} — we'll bring it over shortly.</p>
-        <button className="btn" onClick={() => setStatus("idle")}>Order more</button>
+        <header className="header">
+          <div className="header-logo">cafe</div>
+          <div className="header-logo-sub">COFFEE BEANS</div>
+        </header>
+
+        <div className="success-body">
+          <div className="success-check">✓</div>
+          <h2>Order placed!</h2>
+          <p>Table {table} — we'll bring it over shortly.</p>
+          <button className="btn" onClick={() => setStatus("idle")}>Order more</button>
+        </div>
       </div>
     );
   }
@@ -102,6 +112,33 @@ const visible = items.filter((i) => {
         />
       </div>
 
+      {popularItems.length > 0 && (
+        <div className="popular-strip">
+          <p className="popular-title">Popular picks</p>
+          <div className="popular-track">
+            {[...popularItems, ...popularItems].map((item, i) => (
+              <div key={`${item.id}-${i}`} className="popular-card">
+                <div className="popular-card-img">
+                  {item.image ? <img src={item.image} alt={item.name} /> : <span>🥤</span>}
+
+                  {cart[item.id] ? (
+                    <div className="qty popular-qty">
+                      <button onClick={() => change(item.id, -1)}>−</button>
+                      <span>{cart[item.id]}</span>
+                      <button onClick={() => change(item.id, 1)}>+</button>
+                    </div>
+                  ) : (
+                    <button className="popular-add" onClick={() => change(item.id, 1)}>+</button>
+                  )}
+                </div>
+                <strong>{item.name}</strong>
+                <span>₹{item.price}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="cat-label">Categories</p>
       <div className="cat-tabs">
         {categories.map((c) => (
@@ -118,44 +155,44 @@ const visible = items.filter((i) => {
       {loading && <p className="loading">Loading menu...</p>}
       {loadError && <p className="error">Couldn't load the menu. Refresh to try again.</p>}
 
-{Object.entries(
-  visible.reduce((groups, item) => {
-    (groups[item.category] = groups[item.category] || []).push(item);
-    return groups;
-  }, {})
-).map(([cat, catItems]) => (
-  <section key={cat} className="menu-section">
-    <h2 className="menu-section-title">{cat}</h2>
-    <div className="item-grid">
-      {catItems.map((item) => (
-        <div key={item.id} className={`item-card${item.available ? "" : " item-card-soldout"}`}>
-          <div className="item-card-img">
-            {item.image ? <img src={item.image} alt={item.name} /> : <span>🥤</span>}
-            <button className="fav-btn" onClick={() => toggleFav(item.id)}>
-              {favs[item.id] ? "❤️" : "🤍"}
-            </button>
+      {Object.entries(
+        visible.reduce((groups, item) => {
+          (groups[item.category] = groups[item.category] || []).push(item);
+          return groups;
+        }, {})
+      ).map(([cat, catItems]) => (
+        <section key={cat} className="menu-section">
+          <h2 className="menu-section-title">{cat}</h2>
+          <div className="item-grid">
+            {catItems.map((item) => (
+              <div key={item.id} className={`item-card${item.available ? "" : " item-card-soldout"}`}>
+                <div className="item-card-img">
+                  {item.image ? <img src={item.image} alt={item.name} /> : <span>🥤</span>}
+                  <button className="fav-btn" onClick={() => toggleFav(item.id)}>
+                    {favs[item.id] ? "❤️" : "🤍"}
+                  </button>
+                </div>
+                <div className="item-card-info">
+                  <strong>{item.name}</strong>
+                  {item.description && <p className="item-desc">{item.description}</p>}
+                  <span className="item-price">₹{item.price}</span>
+                </div>
+                {!item.available ? (
+                  <span className="sold-out">Sold out</span>
+                ) : cart[item.id] ? (
+                  <div className="qty qty-card">
+                    <button onClick={() => change(item.id, -1)}>−</button>
+                    <span>{cart[item.id]}</span>
+                    <button onClick={() => change(item.id, 1)}>+</button>
+                  </div>
+                ) : (
+                  <button className="add-fab" onClick={() => change(item.id, 1)}>+</button>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="item-card-info">
-            <strong>{item.name}</strong>
-            {item.description && <p className="item-desc">{item.description}</p>}
-            <span className="item-price">₹{item.price}</span>
-          </div>
-          {!item.available ? (
-            <span className="sold-out">Sold out</span>
-          ) : cart[item.id] ? (
-            <div className="qty qty-card">
-              <button onClick={() => change(item.id, -1)}>−</button>
-              <span>{cart[item.id]}</span>
-              <button onClick={() => change(item.id, 1)}>+</button>
-            </div>
-          ) : (
-            <button className="add-fab" onClick={() => change(item.id, 1)}>+</button>
-          )}
-        </div>
+        </section>
       ))}
-    </div>
-  </section>
-))}
 
       {count > 0 && !showCart && (
         <div className="cart-bar" onClick={() => setShowCart(true)}>
