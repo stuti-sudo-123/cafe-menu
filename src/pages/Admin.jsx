@@ -104,6 +104,11 @@ export default function Admin() {
     load();
   }
 
+  async function togglePremium(item) {
+    await supabase.from("menu_items").update({ premium: !item.premium }).eq("id", item.id);
+    load();
+  }
+
   async function remove(item) {
     if (!window.confirm(`Delete "${item.name}"?`)) return;
     await supabase.from("menu_items").delete().eq("id", item.id);
@@ -226,11 +231,15 @@ export default function Admin() {
               <div className="admin-item-info">
                 {item.image && <img src={item.image} alt="" className="admin-item-thumb" />}
                 <strong>{item.name}</strong> · ₹{item.price}
+                {item.premium && <span className="premium-tag"> ★ Premium</span>}
                 {!item.available && <span className="sold-out"> Sold out</span>}
               </div>
               <div className="admin-item-actions">
                 <button className="btn-secondary" onClick={() => toggle(item)}>
                   {item.available ? "Mark sold out" : "Mark available"}
+                </button>
+                <button className="btn-secondary" onClick={() => togglePremium(item)}>
+                  {item.premium ? "Unmark premium" : "Mark premium"}
                 </button>
                 <button className="btn-secondary" onClick={() => startEdit(item)}>Edit</button>
                 <button className="btn-secondary" onClick={() => remove(item)}>Delete</button>

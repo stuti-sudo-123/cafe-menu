@@ -160,39 +160,43 @@ export default function Menu() {
           (groups[item.category] = groups[item.category] || []).push(item);
           return groups;
         }, {})
-      ).map(([cat, catItems]) => (
-        <section key={cat} className="menu-section">
-          <h2 className="menu-section-title">{cat}</h2>
-          <div className="item-grid">
-            {catItems.map((item) => (
-              <div key={item.id} className={`item-card${item.available ? "" : " item-card-soldout"}`}>
-                <div className="item-card-img">
-                  {item.image ? <img src={item.image} alt={item.name} /> : <span>🥤</span>}
-                  <button className="fav-btn" onClick={() => toggleFav(item.id)}>
-                    {favs[item.id] ? "❤️" : "🤍"}
-                  </button>
-                </div>
-                <div className="item-card-info">
-                  <strong>{item.name}</strong>
-                  {item.description && <p className="item-desc">{item.description}</p>}
-                  <span className="item-price">₹{item.price}</span>
-                </div>
-                {!item.available ? (
-                  <span className="sold-out">Sold out</span>
-                ) : cart[item.id] ? (
-                  <div className="qty qty-card">
-                    <button onClick={() => change(item.id, -1)}>−</button>
-                    <span>{cart[item.id]}</span>
-                    <button onClick={() => change(item.id, 1)}>+</button>
+      ).map(([cat, catItems]) => {
+        const sortedItems = [...catItems].sort((a, b) => (b.premium ? 1 : 0) - (a.premium ? 1 : 0));
+        return (
+          <section key={cat} className="menu-section">
+            <h2 className="menu-section-title">{cat}</h2>
+            <div className="item-grid">
+              {sortedItems.map((item) => (
+                <div key={item.id} className={`item-card${item.available ? "" : " item-card-soldout"}`}>
+                  <div className="item-card-img">
+                    {item.image ? <img src={item.image} alt={item.name} /> : <span>🥤</span>}
+                    {item.premium && <span className="premium-badge">Chef's Pick</span>}
+                    <button className="fav-btn" onClick={() => toggleFav(item.id)}>
+                      {favs[item.id] ? "❤️" : "🤍"}
+                    </button>
                   </div>
-                ) : (
-                  <button className="add-fab" onClick={() => change(item.id, 1)}>+</button>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+                  <div className="item-card-info">
+                    <strong>{item.name}</strong>
+                    {item.description && <p className="item-desc">{item.description}</p>}
+                    <span className="item-price">₹{item.price}</span>
+                  </div>
+                  {!item.available ? (
+                    <span className="sold-out">Sold out</span>
+                  ) : cart[item.id] ? (
+                    <div className="qty qty-card">
+                      <button onClick={() => change(item.id, -1)}>−</button>
+                      <span>{cart[item.id]}</span>
+                      <button onClick={() => change(item.id, 1)}>+</button>
+                    </div>
+                  ) : (
+                    <button className="add-fab" onClick={() => change(item.id, 1)}>+</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
 
       {count > 0 && !showCart && (
         <div className="cart-bar" onClick={() => setShowCart(true)}>

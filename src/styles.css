@@ -466,3 +466,18 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .image-upload { border-color: #c9ad94; background: #fff; }
 .admin-category h2 { color: #3a2210; border-bottom: 1px solid #e3cdb8; }
 .admin-msg { color: #3b6d11; }
+
+.premium-badge {
+  position: absolute; top: 6px; left: 6px;
+  background: #b8860b; color: #fff;
+  font-size: 10px; font-weight: 600;
+  padding: 3px 8px; border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+.premium-tag { color: #b8860b; font-weight: 600; }
+
+.item-card:has(.premium-badge) {
+  border: 1.5px solid #b8860b;
+  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.2);
+}
+
