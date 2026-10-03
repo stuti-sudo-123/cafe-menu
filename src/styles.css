@@ -356,11 +356,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   padding: 0 16px;
   animation: popular-scroll 32s linear infinite;
 }
-/* pause while hovering (desktop) or touching (mobile) so + is easy to tap */
-.popular-strip:hover .popular-track,
-.popular-strip:active .popular-track {
-  animation-play-state: paused;
-}
+
 .popular-card {
   flex: none;
   width: 110px;
