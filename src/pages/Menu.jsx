@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../supabase.js";
 
@@ -15,6 +15,8 @@ export default function Menu() {
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("All");
   const [favs, setFavs] = useState({});
+  const [stripPaused, setStripPaused] = useState(false);
+  const resumeTimer = useRef(null);
 
   useEffect(() => {
     async function loadMenu() {
@@ -60,6 +62,14 @@ export default function Menu() {
     .map((i) => ({ ...i, qty: cart[i.id] }));
   const count = lines.reduce((s, l) => s + l.qty, 0);
   const total = lines.reduce((s, l) => s + l.qty * Number(l.price), 0);
+
+  function pauseStrip() {
+    setStripPaused(true);
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+  }
+  function scheduleResume() {
+    resumeTimer.current = setTimeout(() => setStripPaused(false), 600);
+  }
 
   async function placeOrder() {
     setStatus("sending");
@@ -113,7 +123,12 @@ export default function Menu() {
       </div>
 
       {popularItems.length > 0 && (
-        <div className="popular-strip">
+        <div
+          className={`popular-strip${stripPaused ? " strip-paused" : ""}`}
+          onPointerDown={pauseStrip}
+          onPointerUp={scheduleResume}
+          onPointerCancel={scheduleResume}
+        >
           <p className="popular-title">Popular picks</p>
           <div className="popular-track">
             {[...popularItems, ...popularItems].map((item, i) => (
