@@ -16,7 +16,9 @@ export default function Menu() {
   const [activeCat, setActiveCat] = useState("All");
   const [favs, setFavs] = useState({});
   const [stripPaused, setStripPaused] = useState(false);
+  const [manualOffset, setManualOffset] = useState(0);
   const resumeTimer = useRef(null);
+  const dragState = useRef({ dragging: false, startX: 0, startOffset: 0 });
 
   useEffect(() => {
     async function loadMenu() {
@@ -66,11 +68,32 @@ export default function Menu() {
   function pauseStrip() {
     setStripPaused(true);
     if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    resumeTimer.current = setTimeout(() => setStripPaused(false), 2500); // safety net
+    resumeTimer.current = setTimeout(() => {
+      setStripPaused(false);
+      setManualOffset(0);
+    }, 2500); // safety net
   }
   function scheduleResume() {
     if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    resumeTimer.current = setTimeout(() => setStripPaused(false), 600);
+    resumeTimer.current = setTimeout(() => {
+      setStripPaused(false);
+      setManualOffset(0);
+    }, 600);
+  }
+
+  function dragStart(clientX) {
+    pauseStrip();
+    dragState.current = { dragging: true, startX: clientX, startOffset: manualOffset };
+  }
+  function dragMove(clientX) {
+    if (!dragState.current.dragging) return;
+    const delta = clientX - dragState.current.startX;
+    if (Math.abs(delta) < 4) return;
+    setManualOffset(dragState.current.startOffset + delta);
+  }
+  function dragEnd() {
+    dragState.current.dragging = false;
+    scheduleResume();
   }
 
   async function placeOrder() {
@@ -124,20 +147,25 @@ export default function Menu() {
         />
       </div>
 
-{popularItems.length > 0 && (
-  <div
-    className="popular-strip"
-    onPointerDown={pauseStrip}
-    onPointerUp={scheduleResume}
-    onPointerCancel={scheduleResume}
-    onTouchStart={pauseStrip}
-    onTouchEnd={scheduleResume}
-  >
-    <p className="popular-title">Popular picks</p>
-    <div
-      className="popular-track"
-      style={{ animationPlayState: stripPaused ? "paused" : "running" }}
-    >
+      {popularItems.length > 0 && (
+        <div
+          className="popular-strip"
+          onPointerDown={(e) => dragStart(e.clientX)}
+          onPointerMove={(e) => dragMove(e.clientX)}
+          onPointerUp={dragEnd}
+          onPointerCancel={dragEnd}
+          onTouchStart={(e) => dragStart(e.touches[0].clientX)}
+          onTouchMove={(e) => dragMove(e.touches[0].clientX)}
+          onTouchEnd={dragEnd}
+        >
+          <p className="popular-title">Popular picks</p>
+          <div
+            className="popular-track"
+            style={{
+              animationPlayState: stripPaused ? "paused" : "running",
+              transform: stripPaused ? `translateX(${manualOffset}px)` : undefined,
+            }}
+          >
             {[...popularItems, ...popularItems].map((item, i) => (
               <div key={`${item.id}-${i}`} className="popular-card">
                 <div className="popular-card-img">
