@@ -261,7 +261,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .welcome-logo-sub { font-size: 10px; letter-spacing: 4px; margin-top: 6px; opacity: 0.85; }
 .welcome-logo-img { height: 60px; }
  
-.welcome-stage { flex: 1; display: flex; align-items: center; overflow: hidden; padding: 20px 0 20px 20px; }
+.welcome-stage { flex: 1; display: flex; align-items: center; overflow: hidden; padding: 4px 0 4px 20px; }
 .welcome-text { flex: 1; padding-right: 8px; }
 .welcome-text b { display: block; font-size: 26px; line-height: 1.15; }
 .welcome-text span { display: block; font-size: 14px; opacity: 0.75; margin-top: 6px; }
@@ -294,7 +294,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 @keyframes welcome-spin { to { transform: rotate(360deg); } }
 @keyframes welcome-spin-rev { to { transform: rotate(-360deg); } }
  
-.welcome-cta { padding: 8px 20px 28px; }
+.welcome-cta { padding: 0px 20px 20px; }
 .welcome-cta a { display: block; text-align: center; background: #4a2c14; color: #fff; text-decoration: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 500; }
  
 @media (prefers-reduced-motion: reduce) { .welcome-orbit, .welcome-food { animation: none; } }
