@@ -124,17 +124,20 @@ export default function Menu() {
         />
       </div>
 
-      {popularItems.length > 0 && (
-        <div
-          className={`popular-strip${stripPaused ? " strip-paused" : ""}`}
-          onPointerDown={pauseStrip}
-          onPointerUp={scheduleResume}
-          onPointerCancel={scheduleResume}
-          onTouchStart={pauseStrip}
-          onTouchEnd={scheduleResume}
-        >
-          <p className="popular-title">Popular picks</p>
-          <div className="popular-track">
+{popularItems.length > 0 && (
+  <div
+    className="popular-strip"
+    onPointerDown={pauseStrip}
+    onPointerUp={scheduleResume}
+    onPointerCancel={scheduleResume}
+    onTouchStart={pauseStrip}
+    onTouchEnd={scheduleResume}
+  >
+    <p className="popular-title">Popular picks</p>
+    <div
+      className="popular-track"
+      style={{ animationPlayState: stripPaused ? "paused" : "running" }}
+    >
             {[...popularItems, ...popularItems].map((item, i) => (
               <div key={`${item.id}-${i}`} className="popular-card">
                 <div className="popular-card-img">
