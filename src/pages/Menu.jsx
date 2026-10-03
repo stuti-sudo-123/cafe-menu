@@ -66,8 +66,10 @@ export default function Menu() {
   function pauseStrip() {
     setStripPaused(true);
     if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => setStripPaused(false), 2500); // safety net
   }
   function scheduleResume() {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
     resumeTimer.current = setTimeout(() => setStripPaused(false), 600);
   }
 
@@ -128,6 +130,8 @@ export default function Menu() {
           onPointerDown={pauseStrip}
           onPointerUp={scheduleResume}
           onPointerCancel={scheduleResume}
+          onTouchStart={pauseStrip}
+          onTouchEnd={scheduleResume}
         >
           <p className="popular-title">Popular picks</p>
           <div className="popular-track">
