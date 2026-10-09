@@ -116,10 +116,9 @@ export default function Menu() {
   if (status === "done") {
     return (
       <div className="success">
-        <header className="header">
-          <div className="header-logo">cafe</div>
-          <div className="header-logo-sub">COFFEE BEANS</div>
-        </header>
+      <header className="header">
+        <img src="/images/logo-red.png" alt="Lower Ground Coffee" className="header-logo-img" />
+      </header>
 
         <div className="success-body">
           <div className="success-check">✓</div>
@@ -133,10 +132,9 @@ export default function Menu() {
 
   return (
     <div className="menu-page">
-      <header className="header">
-        <div className="header-logo">cafe</div>
-        <div className="header-logo-sub">COFFEE BEANS</div>
-      </header>
+    <header className="header">
+      <img src="/images/logo-red.png" alt="Lower Ground Coffee" className="header-logo-img" />
+    </header>
 
       <div className="search-bar">
         <span className="search-icon">🔍</span>

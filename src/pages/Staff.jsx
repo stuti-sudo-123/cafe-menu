@@ -50,8 +50,7 @@ export default function Staff() {
 if (!session) {
   return (
     <div className="staff-login">
-      <div className="auth-logo">cafe</div>
-      <div className="auth-logo-sub">COFFEE BEANS</div>
+    <img src="/images/logo-red.png" alt="Lower Ground Coffee" className="auth-logo-img" />
       <h2>Staff login</h2>
         <input
           type="email"

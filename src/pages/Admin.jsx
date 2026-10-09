@@ -120,8 +120,7 @@ export default function Admin() {
   if (!session) {
     return (
       <div className="admin-login">
-        <div className="auth-logo">cafe</div>
-        <div className="auth-logo-sub">COFFEE BEANS</div>
+      <img src="/images/logo-red.png" alt="Lower Ground Coffee" className="auth-logo-img" />
         <h2>Admin login</h2>
         <input
           type="email"
