@@ -6,11 +6,11 @@ const FOODS = [
   { name: "Pizza and Love", bg: "#c8362d", fg: "#fff3e8", img: "/images/pizza.png", desc: "Veggies meet cheese in the happiest slice alive." },
   { name: "Carrot cake", bg: "#f2c98f", fg: "#3a2210", img: "/images/carrotCake.png", desc: "Spiced carrot layers and cream cheese frosting, soft and sweet." },
   { name: "Matcha Latte", bg: "#2f4a2a", fg: "#eef5dc", img: "/images/matchaLatte.png", desc: "A silky swirl of vibrant green matcha and creamy milk\u2014your perfect moment of calm in every sip." },
-  { name: "Edamame Falafel", bg: "#e3d7a3", fg: "#34290f", img: "/images/cucumberToast.png", desc: "From Middle Eastern roots to a modern twist \u2014 our Edamame Falafel blends earthy chickpeas, vibrant edamame, and bold spices into one unforgettable bite." },
+  { name: "Edamame Falafel", bg: "#e3d7a3", fg: "#34290f", img: "/images/cucumberToast.png", desc: "our Edamame Falafel blends earthy chickpeas, vibrant edamame, and bold spices into one unforgettable bite." },
   { name: "Feta & Olives", bg: "#55602b", fg: "#f7f3d6", img: "/images/fetaOlives.png", desc: "Salty feta and juicy olives, simple and Mediterranean to the core." },
 ];
 
-const INTERVAL = 3000; // ms between slides
+const INTERVAL = 1500; // ms between slides
 
 export default function Welcome() {
   const [params] = useSearchParams();
