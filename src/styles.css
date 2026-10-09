@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600&display=swap");
  
 :root {
   --brand: #c8362d;        /* logo red: change this one value to match your logo exactly */
@@ -6,6 +6,7 @@
   --brand-tint: #fbe2de;   /* light red tint (labels) */
   --ink: #3a2210;          /* dark brown text, same as welcome page */
   --header-bg: #fffaf4;    /* light header so the red logo stands out */
+  --display: "Bebas Neue", Impact, "Arial Narrow", sans-serif;
 }
  
 /* Classes used by the app
@@ -24,7 +25,7 @@
                 .admin-category .admin-item .admin-item-info .admin-item-actions
   */
 * { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, sans-serif; background: #faf6f0; color: #2c1a10; }
+body { margin: 0; font-family: "Poppins", system-ui, sans-serif; background: #faf6f0; color: #2c1a10; }
 h1, h2 { margin: 0; }
 input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; border-radius: 8px; width: 100%; margin-bottom: 10px; background: #fff; }
  
@@ -268,7 +269,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .success .btn:active { background: var(--brand-dark); transform: scale(0.98); }
  
 /* ===================== welcome page ===================== */
-.welcome { max-width: 430px; margin: 0 auto; min-height: 100vh; background-color: var(--bg, #e8d5c8); transition: background-color 0.9s ease; color: #3a2210; display: flex; flex-direction: column; }
+.welcome { max-width: 430px; margin: 0 auto; min-height: 100vh; background-color: var(--bg, #e8d5c8); color: var(--fg, #3a2210); transition: background-color 0.9s ease, color 0.9s ease; display: flex; flex-direction: column; }
 .welcome-header { background: var(--header-bg); color: var(--ink); text-align: center; padding: 26px 16px 22px; border-bottom: 3px solid var(--brand); }
 .welcome-logo { font-size: 44px; font-weight: 600; letter-spacing: 2px; line-height: 1; }
 .welcome-logo-sub { font-size: 10px; letter-spacing: 4px; margin-top: 6px; opacity: 0.85; }
@@ -282,6 +283,10 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   initial-value: 0deg;
 }
  
+.welcome-stage::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 100% 50%, rgba(255,255,255,0.22), transparent 65%);
+}
 .welcome-stage {
   --img: 110px;
   --size: min(100vw, 420px);
@@ -300,20 +305,19 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   z-index: 3;
 }
 .welcome-info-title {
-  margin: 0 0 8px;
-  font-family: "Bebas Neue", Impact, sans-serif;
-  font-size: 38px; font-weight: 400; line-height: 0.95; letter-spacing: 1px;
+  margin: 0 0 10px;
+  font-family: var(--display);
+  font-size: 40px; font-weight: 400; line-height: 0.95; letter-spacing: 1px;
   text-transform: uppercase;
-  color: #3a2210;
-  text-shadow: 2px 2px 0 rgba(185, 143, 120, 0.7);
+  color: inherit;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.18);
   animation: welcome-text-in 0.6s ease both;
 }
 .welcome-info-desc {
   margin: 0;
   font-family: "Poppins", system-ui, sans-serif;
-  font-size: 11px; font-weight: 400; line-height: 1.45; letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--ink);
+  font-size: 13px; font-weight: 400; line-height: 1.55; letter-spacing: 0;
+  color: inherit; opacity: 0.88;
   animation: welcome-text-in 0.6s 0.08s ease both;
 }
 @keyframes welcome-text-in {
@@ -333,7 +337,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .welcome-wheel { position: absolute; top: 0; left: 0; width: var(--size); height: var(--size); }
 .welcome-ring {
   position: absolute; inset: calc(var(--img) / 2 + 4px);
-  border: 2px dashed #b98f78; border-radius: 50%; opacity: 0.7;
+  border: 2px dashed currentColor; border-radius: 50%; opacity: 0.3;
 }
 .welcome-orbit {
   position: absolute; inset: 0;
@@ -359,7 +363,6 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .welcome-food.is-active { scale: 1.3; opacity: 1; z-index: 2; }
  
 .welcome-cta { padding: 0px 20px 20px; }
-.welcome-cta a { display: block; text-align: center; background: var(--brand); color: #fff; text-decoration: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 500; }
  
 @media (prefers-reduced-motion: reduce) {
   .welcome-orbit { transition-duration: 0.01s; }
@@ -367,23 +370,22 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 }
  
 .welcome-cta a {
-  display: block; text-align: center; background: var(--brand); color: #fff;
+  display: block; text-align: center;
+  background: var(--fg, var(--brand)); color: var(--bg, #fff);
   text-decoration: none; padding: 14px; border-radius: 12px;
   font-size: 16px; font-weight: 500;
-  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.9s ease, color 0.9s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
  
 @media (hover: hover) {
   .welcome-cta a:hover {
-    background: var(--brand-dark);
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(200, 54, 45, 0.3);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
   }
 }
  
 .welcome-cta a:active {
   transform: scale(0.98);
-  background: var(--brand-dark);
 }
  
 .image-upload {
@@ -546,4 +548,15 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .header-logo-img { display: block; height: 52px; margin: 0 auto; }
 .welcome-logo-img { display: block; height: 64px; margin: 0 auto; }
 .auth-logo-img { display: block; height: 70px; margin: 0 auto 24px; }
+ 
+/* ===== typography: Poppins for text, Bebas Neue for headings ===== */
+.menu-section-title, .popular-title, .cart-top h2, .success h2,
+.staff-top h1, .admin-top h1 {
+  font-family: var(--display); font-weight: 400; letter-spacing: 1px; text-transform: uppercase;
+}
+.menu-section-title { font-size: 24px; }
+.popular-title { font-size: 20px; }
+.cart-top h2 { font-size: 26px; }
+.success h2 { font-size: 32px; }
+.staff-top h1, .admin-top h1 { font-size: 26px; }
  
