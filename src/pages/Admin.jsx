@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase.js";
+import { THEMES, THEME_KEYS } from "../popularThemes.js";
 
 const PARTS = [
   { id: "beverages", label: "Beverages" },
@@ -15,7 +16,12 @@ const BLANK = {
   price: "",
   premium: false,
   available: true,
+  popular: false,
+  image: "",
+  pop_theme: "",
 };
+
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "dish";
 
 const NOT_ALLOWED = "You're not allowed to change the menu. Check the admin email you put in the SQL.";
 
@@ -58,13 +64,19 @@ function Login() {
 /* ---------------- add / edit form ---------------- */
 function DishForm({ initial, categories, groups, busy, onSave, onCancel }) {
   const [f, setF] = useState(initial);
+  const [file, setFile] = useState(null);
   const set = (key, value) => setF((prev) => ({ ...prev, [key]: value }));
+
+  // small preview of a picture chosen from the computer
+  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview]);
+  const shownImage = preview || f.image;
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(f);
+        onSave(f, file);
       }}
     >
       <label>Part</label>
@@ -105,6 +117,50 @@ function DishForm({ initial, categories, groups, busy, onSave, onCancel }) {
           Available
         </label>
       </div>
+
+      <div className="check-row">
+        <label>
+          <input type="checkbox" checked={f.popular} onChange={(e) => set("popular", e.target.checked)} />
+          Popular pick (shows in the carousel at the top)
+        </label>
+      </div>
+
+      {f.popular && (
+        <div className="pop-box">
+          <label>Picture (a PNG with a see-through background looks best, max 2 MB)</label>
+          {shownImage && <img className="pop-preview" src={shownImage} alt="" />}
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          <label>Or a picture address, e.g. /images/pizza.png</label>
+          <input
+            value={f.image}
+            onChange={(e) => {
+              setFile(null);
+              set("image", e.target.value);
+            }}
+          />
+          {shownImage && (
+            <button type="button" className="btn-secondary" onClick={() => { setFile(null); set("image", ""); }}>
+              Remove picture
+            </button>
+          )}
+
+          <label style={{ marginTop: 12 }}>Card colour</label>
+          <div className="theme-row">
+            {THEME_KEYS.map((k) => (
+              <button
+                key={k}
+                type="button"
+                className={`theme-chip${f.pop_theme === k ? " on" : ""}`}
+                style={{ background: THEMES[k].bg, color: THEMES[k].fg }}
+                onClick={() => set("pop_theme", f.pop_theme === k ? "" : k)}
+              >
+                {THEMES[k].label}
+              </button>
+            ))}
+          </div>
+          <p className="admin-hint">No colour chosen = picked automatically.</p>
+        </div>
+      )}
 
       <button className="btn" disabled={busy}>{busy ? "Saving..." : "Save"}</button>
       <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>
@@ -160,7 +216,27 @@ export default function Admin() {
     return true;
   }
 
-  async function save(f) {
+  async function save(f, file) {
+    if (file && file.size > 2 * 1024 * 1024) {
+      setErr("That picture is bigger than 2 MB. Please use a smaller one.");
+      return;
+    }
+    let image = f.image.trim() || null;
+    if (file) {
+      setBusy(true);
+      setErr("");
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${Date.now()}-${slug(f.name)}.${ext}`;
+      const { error } = await supabase.storage
+        .from("menu-images")
+        .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+      if (error) {
+        setBusy(false);
+        setErr("Couldn't upload the picture: " + error.message);
+        return;
+      }
+      image = supabase.storage.from("menu-images").getPublicUrl(path).data.publicUrl;
+    }
     const row = {
       section: f.section,
       category: f.category.trim(),
@@ -170,6 +246,9 @@ export default function Admin() {
       price: Number(f.price),
       premium: f.premium,
       available: f.available,
+      popular: f.popular,
+      image,
+      pop_theme: f.pop_theme || null,
     };
     if (!row.name || !row.category || Number.isNaN(row.price)) {
       setErr("Name, category and price are required.");
@@ -179,7 +258,7 @@ export default function Admin() {
     if (editing === "new") {
       const last = Math.max(0, ...rows.map((r) => r.sort_order || 0));
       ok = await exec(
-        [supabase.from("menu_items").insert({ ...row, sort_order: last + 10, popular: false }).select()],
+        [supabase.from("menu_items").insert({ ...row, sort_order: last + 10 }).select()],
         "Dish added."
       );
     } else {
@@ -222,6 +301,9 @@ export default function Admin() {
     price: r.price,
     premium: !!r.premium,
     available: r.available !== false,
+    popular: !!r.popular,
+    image: r.image || "",
+    pop_theme: r.pop_theme || "",
   });
 
   return (
@@ -295,6 +377,7 @@ export default function Admin() {
                               ₹{r.price}
                               {r.grp ? ` · ${r.grp}` : ""}
                               {r.premium ? " · ★ Chef's Choice" : ""}
+                              {r.popular ? " · Popular pick" : ""}
                               {r.available === false ? " · Sold out" : ""}
                             </span>
                           </div>
@@ -306,6 +389,9 @@ export default function Admin() {
                           </button>
                           <button className="btn-secondary" disabled={busy} onClick={() => toggle(r, "premium")}>
                             {r.premium ? "Remove ★" : "★ Chef's Choice"}
+                          </button>
+                          <button className="btn-secondary" disabled={busy} onClick={() => toggle(r, "popular")}>
+                            {r.popular ? "Remove from popular" : "Make popular"}
                           </button>
                           <button className="btn-secondary" disabled={busy} onClick={() => move(r, -1)} aria-label="Move up">▲</button>
                           <button className="btn-secondary" disabled={busy} onClick={() => move(r, 1)} aria-label="Move down">▼</button>

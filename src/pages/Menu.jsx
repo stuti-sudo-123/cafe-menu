@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { supabase } from "../supabase.js";
+import { THEMES, THEME_KEYS } from "../popularThemes.js";
 
 const rupee = (n) => `₹${n}`;
 
@@ -12,7 +12,7 @@ const SECTION_META = [
 
 // Small notes that aren't dishes. Keys: slug of the category / exact group name.
 const CATEGORY_NOTES = {
-  coffee: "Add-ons for ₹30: vanilla, caramel, hazelnut, irish, mocha, biscoff, nutella, blueberry, coconut. Tell us in the order note.",
+  coffee: "Add-ons for ₹30: vanilla, caramel, hazelnut, irish, mocha, biscoff, nutella, blueberry, coconut.",
 };
 const GROUP_NOTES = {
   Tonic: "Choose ginger ale, Red Bull or tonic.",
@@ -22,14 +22,6 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
 // Rows from menu_items -> section > category > group > items (rows arrive ordered by sort_order).
 function buildSections(rows) {
-  // Names that appear twice (e.g. "Oreo" shake and cheesecake) get their group added in the order,
-  // so the kitchen knows which one was meant.
-  const seen = {};
-  rows.forEach((r) => {
-    const k = r.name.toLowerCase();
-    seen[k] = (seen[k] || 0) + 1;
-  });
-
   return SECTION_META.map((meta) => {
     const categories = [];
     rows
@@ -49,59 +41,44 @@ function buildSections(rows) {
         group.items.push({
           id: r.id,
           name: r.name,
-          orderName: seen[r.name.toLowerCase()] > 1 ? `${r.name} (${groupName || r.category})` : r.name,
           price: Number(r.price),
           desc: r.description || "",
           chef: !!r.premium,
           available: r.available !== false,
           section: meta.id,
+          popular: !!r.popular,
+          image: r.image || "",
+          theme: r.pop_theme || "",
         });
       });
     return { ...meta, categories };
   }).filter((s) => s.categories.length);
 }
 
-// Popular picks = the dishes from the welcome page. `find` is the dish's name on the menu (lower-case);
-// when a dish with that name exists the card shows its price and can be ordered.
-const POPULAR = [
-  { find: "tiramisu", name: "Tiramisu", img: "/images/tiramisu.png", bg: "#4a2f22", fg: "#fbeee0" },
-  { find: "pizz & love", name: "Pizza and Love", img: "/images/pizza.png", bg: "#c8362d", fg: "#fff3e8" },
-  { find: "carrot cake", name: "Carrot Cake", img: "/images/carrotCake.png", bg: "#f2c98f", fg: "#3a2210" },
-  { find: "matcha latte", name: "Matcha Latte", img: "/images/matchaLatte.png", bg: "#2f4a2a", fg: "#eef5dc" },
-  { find: "edamame falafel", name: "Edamame Falafel", img: "/images/cucumberToast.png", bg: "#e3d7a3", fg: "#34290f" },
-  { find: "feta & olives", name: "Feta & Olives", img: "/images/fetaOlives.png", bg: "#55602b", fg: "#f7f3d6" },
-];
-
-function PopularCard({ card, qty, onAdd, onRemove, hidden }) {
+// The carousel shows every dish the admin ticked as "Popular pick".
+function PopularCard({ card, hidden }) {
   const { item } = card;
-  const tab = hidden ? -1 : undefined;
   return (
     <div className="popular-card" style={{ "--card-bg": card.bg, "--card-fg": card.fg }} aria-hidden={hidden || undefined}>
-      <img className="popular-card-img" src={card.img} alt={hidden ? "" : card.name} draggable="false" />
-      <strong>{item ? item.name : card.name}</strong>
+      {card.img ? (
+        <img className="popular-card-img" src={card.img} alt={hidden ? "" : item.name} draggable="false" />
+      ) : (
+        <div className="popular-card-emoji" aria-hidden="true">{item.section === "food" ? "🍽️" : "☕"}</div>
+      )}
+      <strong>{item.name}</strong>
       <div className="popular-card-row">
-        {item && <span className="popular-card-price">{rupee(item.price)}</span>}
-        {item && !item.available && <span className="popular-card-sold">Sold out</span>}
-        {item &&
-          item.available &&
-          (qty ? (
-            <div className="qty">
-              <button type="button" tabIndex={tab} onClick={() => onRemove(item.id)} aria-label={`Remove one ${item.name}`}>−</button>
-              <span>{qty}</span>
-              <button type="button" tabIndex={tab} onClick={() => onAdd(item.id)} aria-label={`Add one ${item.name}`}>+</button>
-            </div>
-          ) : (
-            <button type="button" tabIndex={tab} className="popular-add" onClick={() => onAdd(item.id)} aria-label={`Add ${item.name}`}>
-              +
-            </button>
-          ))}
+        {item.available ? (
+          <span className="popular-card-price">{rupee(item.price)}</span>
+        ) : (
+          <span className="popular-card-sold">Sold out</span>
+        )}
       </div>
     </div>
   );
 }
 
 // Horizontal carousel: drifts left by itself, pauses while touched / hovered, and can be swiped.
-function PopularStrip({ cards, cart, onAdd, onRemove }) {
+function PopularStrip({ cards }) {
   const trackRef = useRef(null);
   const paused = useRef(false);
   const timer = useRef(null);
@@ -144,6 +121,10 @@ function PopularStrip({ cards, cart, onAdd, onRemove }) {
     timer.current = setTimeout(() => (paused.current = false), ms);
   };
 
+  // With only a few picks, repeat them so the loop is always wider than the screen.
+  const repeat = Math.max(1, Math.ceil(4 / cards.length));
+  const base = Array.from({ length: repeat }).flatMap(() => cards);
+
   return (
     <section className="popular-strip">
       <h2 className="popular-title">Popular picks</h2>
@@ -155,19 +136,10 @@ function PopularStrip({ cards, cart, onAdd, onRemove }) {
         onTouchStart={hold}
         onTouchEnd={() => release(1800)}
         onTouchCancel={() => release(1800)}
-        onFocus={hold}
-        onBlur={() => release(600)}
       >
         {[0, 1].flatMap((copy) =>
-          cards.map((card) => (
-            <PopularCard
-              key={`${card.find}-${copy}`}
-              card={card}
-              hidden={copy === 1}
-              qty={card.item ? cart[card.item.id] : 0}
-              onAdd={onAdd}
-              onRemove={onRemove}
-            />
+          base.map((card, i) => (
+            <PopularCard key={`${card.key}-${copy}-${i}`} card={card} hidden={copy === 1 || i >= cards.length} />
           ))
         )}
       </div>
@@ -175,7 +147,7 @@ function PopularStrip({ cards, cart, onAdd, onRemove }) {
   );
 }
 
-function Dish({ item, qty, onAdd, onRemove, where }) {
+function Dish({ item, where }) {
   return (
     <li className={`dish ${item.available ? "" : "dish-soldout"}`}>
       <div className="dish-main">
@@ -186,32 +158,14 @@ function Dish({ item, qty, onAdd, onRemove, where }) {
           <span className="dish-price">{rupee(item.price)}</span>
         </div>
         {item.desc && <p className="dish-desc">{item.desc}</p>}
+        {!item.available && <p className="dish-sold">Sold out</p>}
         {where && <p className="dish-where">{where}</p>}
-      </div>
-
-      <div className="dish-add">
-        {!item.available ? (
-          <span className="sold-out">Sold out</span>
-        ) : qty ? (
-          <div className="qty">
-            <button type="button" onClick={() => onRemove(item.id)} aria-label={`Remove one ${item.name}`}>−</button>
-            <span>{qty}</span>
-            <button type="button" onClick={() => onAdd(item.id)} aria-label={`Add one ${item.name}`}>+</button>
-          </div>
-        ) : (
-          <button type="button" className="dish-plus" onClick={() => onAdd(item.id)} aria-label={`Add ${item.name}`}>
-            +
-          </button>
-        )}
       </div>
     </li>
   );
 }
 
 export default function Menu() {
-  const [params] = useSearchParams();
-  const table = params.get("table") || "?";
-
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -219,11 +173,6 @@ export default function Menu() {
   const [sectionId, setSectionId] = useState(SECTION_META[0].id);
   const [catId, setCatId] = useState("");
   const [search, setSearch] = useState("");
-
-  const [cart, setCart] = useState({}); // id -> qty
-  const [note, setNote] = useState("");
-  const [showCart, setShowCart] = useState(false);
-  const [status, setStatus] = useState("idle"); // idle | sending | error | done
 
   // ---- load the menu ----
   useEffect(() => {
@@ -268,67 +217,18 @@ export default function Menu() {
     ? everything.filter(({ item }) => item.name.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q))
     : [];
 
-  const popularCards = POPULAR.map((p) => ({
-    ...p,
-    item: everything.map((e) => e.item).find((i) => i.name.toLowerCase() === p.find) || null,
-  }));
-
-  // ---- cart ----
-  const add = (id) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
-  const remove = (id) =>
-    setCart((c) => {
-      const qty = (c[id] || 0) - 1;
-      const next = { ...c };
-      if (qty <= 0) delete next[id];
-      else next[id] = qty;
-      return next;
+  const popularCards = everything
+    .map((e) => e.item)
+    .filter((i) => i.popular)
+    .map((item, i) => {
+      const theme = THEMES[item.theme] || THEMES[THEME_KEYS[i % THEME_KEYS.length]];
+      return { key: item.id, item, img: item.image, bg: theme.bg, fg: theme.fg };
     });
-
-  const lines = everything
-    .map(({ item }) => item)
-    .filter((i) => cart[i.id])
-    .map((i) => ({ ...i, qty: cart[i.id] }));
-  const count = lines.reduce((s, l) => s + l.qty, 0);
-  const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
-
-  async function placeOrder() {
-    setStatus("sending");
-    const { error } = await supabase.from("orders").insert({
-      table_no: table,
-      items: lines.map((l) => ({ name: l.orderName, qty: l.qty, price: l.price })),
-      total,
-      note,
-    });
-    if (error) setStatus("error");
-    else {
-      setCart({});
-      setNote("");
-      setShowCart(false);
-      setStatus("done");
-    }
-  }
-
-  if (status === "done") {
-    return (
-      <div className="success">
-        <header className="header">
-          <img src="/images/logo-red.png" alt="Lower Ground Coffee" className="header-logo-img" />
-        </header>
-        <div className="success-body">
-          <div className="success-check">✓</div>
-          <h2>Order placed!</h2>
-          <p>Table {table} — we'll bring it over shortly.</p>
-          <button className="btn" onClick={() => setStatus("idle")}>Order more</button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="menu-page">
       <header className="header">
         <img src="/images/logo-red.png" alt="Lower Ground Coffee" className="header-logo-img" />
-        {table !== "?" && <div className="table-label">Table {table}</div>}
       </header>
 
       <div className="search-bar">
@@ -354,9 +254,7 @@ export default function Menu() {
       {loading && <p className="loading">Loading menu...</p>}
       {loadError && <p className="error">Couldn't load the menu. Refresh to try again.</p>}
 
-      {!q && sections.length > 0 && (
-        <PopularStrip cards={popularCards} cart={cart} onAdd={add} onRemove={remove} />
-      )}
+      {!q && popularCards.length > 0 && <PopularStrip cards={popularCards} />}
 
       {category && (
         <>
@@ -391,7 +289,7 @@ export default function Menu() {
               results.length ? (
                 <ul className="dish-list">
                   {results.map(({ item, where }) => (
-                    <Dish key={item.id} item={item} where={where} qty={cart[item.id]} onAdd={add} onRemove={remove} />
+                    <Dish key={item.id} item={item} where={where} />
                   ))}
                 </ul>
               ) : (
@@ -406,7 +304,7 @@ export default function Menu() {
                     {g.note && <p className="menu-group-note">{g.note}</p>}
                     <ul className="dish-list">
                       {g.items.map((item) => (
-                        <Dish key={item.id} item={item} qty={cart[item.id]} onAdd={add} onRemove={remove} />
+                        <Dish key={item.id} item={item} />
                       ))}
                     </ul>
                   </section>
@@ -415,50 +313,6 @@ export default function Menu() {
             )}
           </main>
         </>
-      )}
-
-      {count > 0 && !showCart && (
-        <div className="cart-bar" onClick={() => setShowCart(true)}>
-          <span>{count} {count === 1 ? "item" : "items"}</span>
-          <span>View cart · {rupee(total)}</span>
-        </div>
-      )}
-
-      {showCart && (
-        <div className="cart-panel">
-          <div className="cart-top">
-            <button className="cart-back" onClick={() => setShowCart(false)} aria-label="Back to menu">←</button>
-            <h2>My cart</h2>
-          </div>
-          {lines.map((l) => (
-            <div key={l.id} className="cart-line">
-              <div className="cart-line-icon">{l.section === "food" ? "🍽️" : "☕"}</div>
-              <div className="cart-line-info">
-                <strong>{l.orderName}</strong>
-                <span className="cart-line-price">{rupee(l.price)}</span>
-              </div>
-              <div className="qty">
-                <button onClick={() => remove(l.id)} aria-label={`Remove one ${l.name}`}>−</button>
-                <span>{l.qty}</span>
-                <button onClick={() => add(l.id)} aria-label={`Add one ${l.name}`}>+</button>
-              </div>
-            </div>
-          ))}
-          <textarea
-            className="note"
-            placeholder="Any note? (e.g. less sugar, add vanilla)"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-          <div className="cart-summary">
-            <div className="cart-summary-row"><span>Cart</span><span>{rupee(total)}</span></div>
-            <div className="cart-summary-row cart-summary-total"><span>Total</span><span>{rupee(total)}</span></div>
-          </div>
-          {status === "error" && <p className="error">Couldn't send order. Please try again.</p>}
-          <button className="checkout-btn" onClick={placeOrder} disabled={status === "sending"}>
-            {status === "sending" ? "Sending..." : "Check Out"}
-          </button>
-        </div>
       )}
     </div>
   );
