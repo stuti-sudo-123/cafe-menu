@@ -1,5 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600&display=swap");
-
+ 
 :root {
   --brand: #c8362d;        /* logo red: change this one value to match your logo exactly */
   --brand-dark: #9f2720;   /* pressed / hover */
@@ -7,8 +7,12 @@
   --ink: #3a2210;          /* dark brown text, same as welcome page */
   --header-bg: #fffaf4;    /* light header so the red logo stands out */
   --display: "Bebas Neue", Impact, "Arial Narrow", sans-serif;
+  --vh: 100vh;
 }
-
+@supports (height: 100dvh) {
+  :root { --vh: 100dvh; }
+}
+ 
 /* Pages: welcome (.welcome-*), menu (.menu-*, .dish-*, .popular-*, .search-bar), admin (.admin-*).
    Colours and fonts are set once in :root above. */
 * { box-sizing: border-box; }
@@ -110,12 +114,12 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 /* order placed screen */
  
 /* ===================== welcome page ===================== */
-.welcome { max-width: 430px; margin: 0 auto; min-height: 100vh; background-color: var(--bg, #e8d5c8); color: var(--fg, #3a2210); transition: background-color 0.9s ease, color 0.9s ease; display: flex; flex-direction: column; }
+.welcome { max-width: 430px; margin: 0 auto; height: var(--vh); background-color: var(--bg, #e8d5c8); color: var(--fg, #3a2210); transition: background-color 0.9s ease, color 0.9s ease; display: flex; flex-direction: column; }
 .welcome-header { background: var(--header-bg); color: var(--ink); text-align: center; padding: 26px 16px 22px; border-bottom: 3px solid var(--brand); }
 .welcome-logo { font-size: 44px; font-weight: 600; letter-spacing: 2px; line-height: 1; }
 .welcome-logo-sub { font-size: 10px; letter-spacing: 4px; margin-top: 6px; opacity: 0.85; }
 .welcome-logo-img { height: 60px; }
-
+ 
 /* lets the browser animate --rot, so the wheel and the upright
    counter-rotation of each food stay perfectly in sync */
 @property --rot {
@@ -123,14 +127,15 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   inherits: true;
   initial-value: 0deg;
 }
-
+ 
 .welcome-stage::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(circle at 100% 50%, rgba(255,255,255,0.22), transparent 65%);
 }
 .welcome-stage {
-  --img: 110px;
-  --size: min(100vw, 420px);
+  --size: min(100vw, 420px, calc(var(--vh) - 200px));  /* 200px = header + button */
+  --img: min(110px, calc(var(--size) * 0.26));
+  min-height: 0;
   position: relative;
   flex: 1;
   display: flex;
@@ -138,7 +143,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   overflow: hidden;
   padding: 4px 0;
 }
-
+ 
 /* text on the left: name + description of the item in the center */
 .welcome-info {
   position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
@@ -165,7 +170,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   from { opacity: 0; transform: translateX(-14px); }
   to   { opacity: 1; transform: none; }
 }
-
+ 
 .welcome-wrap {
   --r: calc(var(--size) / 2 - var(--img) / 2 - 4px);
   position: relative; flex: none; margin-left: auto;
@@ -203,7 +208,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 /* the item in the center is a bit larger */
 .welcome-food.is-active { scale: 1.3; opacity: 1; z-index: 2; }
  
-.welcome-cta { padding: 0px 20px 20px; }
+.welcome-cta { padding: 0 20px 20px; flex: none; }
  
 @media (prefers-reduced-motion: reduce) {
   .welcome-orbit { transition-duration: 0.01s; }
@@ -248,7 +253,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .admin-search input { border: none; padding: 0; margin: 0; }
 .admin-search input:focus { outline: none; }
  
-
+ 
  
  
  
@@ -304,7 +309,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .image-upload { border-color: #c9ad94; background: #fff; }
 .admin-category h2 { color: #3a2210; border-bottom: 1px solid #e3cdb8; }
 .admin-msg { color: #3b6d11; }
-
+ 
 .premium-badge {
   position: absolute; top: 6px; left: 6px;
   background: #b8860b; color: #fff;
@@ -313,17 +318,17 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   letter-spacing: 0.3px;
 }
 .premium-tag { color: #b8860b; font-weight: 600; }
-
+ 
 .header-logo-img { display: block; height: 52px; margin: 0 auto; }
 .welcome-logo-img { display: block; height: 64px; margin: 0 auto; }
 .auth-logo-img { display: block; height: 70px; margin: 0 auto 24px; }
-
+ 
 /* ===== typography: Poppins for text, Bebas Neue for headings ===== */
-.menu-group-title, .staff-top h1, .admin-top h1 {
+.staff-top h1, .admin-top h1 {
   font-family: var(--display); font-weight: 400; letter-spacing: 1px; text-transform: uppercase;
 }
 .staff-top h1, .admin-top h1 { font-size: 26px; }
-
+ 
 /* ===================== menu page (text only, no photos) ===================== */
 .menu-nav {
   position: sticky; top: 0; z-index: 5;
@@ -341,10 +346,10 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   color: var(--ink); transition: background-color 0.25s ease, color 0.25s ease;
 }
 .menu-switch button[aria-pressed="true"] { background: var(--brand); color: #fff; }
-
+ 
 /* part 2: categories inside the chosen part */
 .menu-tabs {
-  display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none;
+  position: relative; display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none;
   margin: 0 -16px; padding: 0 16px;
 }
 .menu-tabs::-webkit-scrollbar { display: none; }
@@ -354,23 +359,24 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   transition: color 0.2s ease, border-color 0.2s ease;
 }
 .menu-tab[aria-current="true"] { color: var(--brand); border-bottom-color: var(--brand); }
-
+ 
 .menu-body { padding: 6px 16px 48px; }
 .menu-note {
   margin: 16px 0 0; padding: 10px 12px; border-radius: 10px;
   background: var(--brand-tint); color: var(--brand-dark); font-size: 12.5px; line-height: 1.5;
 }
 .menu-empty { padding: 32px 0; text-align: center; color: #6b5b50; }
-
+ 
 /* sub-headings (Hot Coffee, Iced Coffee, Cheesecake ...) */
-.menu-group { margin-top: 24px; }
+.menu-group { margin-top: 18px; }
 .menu-group-title {
   display: flex; align-items: center; gap: 12px; margin: 0 0 2px;
-  font-size: 26px; line-height: 1; color: var(--brand);
+  font-family: var(--display); font-weight: 400; letter-spacing: 1px; text-transform: uppercase;
+  font-size: 21px; line-height: 1; color: var(--brand);
 }
 .menu-group-title::after { content: ""; flex: 1; height: 2px; background: var(--brand); opacity: 0.18; }
 .menu-group-note { margin: 6px 0 0; font-size: 12.5px; color: #6b5b50; }
-
+ 
 /* dish rows: name ........ price  [+] */
 .dish-list { list-style: none; margin: 0; padding: 0; }
 .dish { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid #eadfd3; }
@@ -382,14 +388,14 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .dish-price { font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .dish-desc { margin: 4px 0 0; max-width: 34ch; font-size: 12.5px; line-height: 1.5; color: #6b5b50; }
 .dish-where { margin: 4px 0 0; font-size: 11.5px; color: var(--brand); }
-
+ 
 /* ordering: add button / quantity pill on the right of each dish */
-
-
+ 
+ 
 /* sold-out dishes */
 .dish-soldout .dish-line, .dish-soldout .dish-desc { opacity: 0.5; }
 .dish-sold { margin: 4px 0 0; font-size: 12px; font-weight: 600; color: #a32d2d; }
-
+ 
 /* ===================== popular picks carousel ===================== */
 .popular-strip { margin: 16px 0 4px; }
 .popular-title {
@@ -402,7 +408,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 .popular-track::-webkit-scrollbar { display: none; }
-
+ 
 .popular-card {
   flex: none; width: 138px; padding: 12px 10px 10px; border-radius: 18px;
   display: flex; flex-direction: column; align-items: center; text-align: center;
@@ -423,7 +429,7 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 }
 .popular-card-price { font-size: 13px; font-weight: 600; }
 .popular-card-sold { font-size: 12px; opacity: 0.8; }
-
+ 
 /* ===================== search bar ===================== */
 .search-bar {
   display: flex; align-items: center; gap: 10px;
@@ -447,12 +453,12 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
   flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;
   background: #f1e3d4; color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer;
 }
-
+ 
 /* Chef's Choice tag (shown above the dish name) */
 .dish-pick {
   margin: 0 0 3px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; color: #b8860b;
 }
-
+ 
 /* ===================== admin page (menu editor) ===================== */
 .admin-part {
   margin: 26px 0 4px; font-family: var(--display); font-size: 30px; font-weight: 400;
@@ -474,10 +480,10 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .admin-item-meta { margin-top: 2px; font-size: 13px; color: #6b5b50; }
 .admin-item-actions .btn-secondary { padding: 6px 10px; font-size: 13px; }
 .admin-login form { text-align: left; }
-
+ 
 /* ===================== popular picks: card without a picture + admin controls ===================== */
 .popular-card-emoji { width: 106px; height: 106px; display: flex; align-items: center; justify-content: center; font-size: 54px; }
-
+ 
 .pop-box { margin: 0 0 14px; padding: 12px; border-radius: 12px; background: #fff; border: 1px solid #e3cdb8; }
 .pop-box input[type="file"] { padding: 8px; font-size: 13px; }
 .pop-preview { display: block; width: 96px; height: 96px; margin: 0 0 10px; object-fit: contain; border-radius: 12px; background: #f1e3d4; }
@@ -485,3 +491,18 @@ input, textarea { font: inherit; padding: 10px; border: 1px solid #d9cfc4; borde
 .theme-chip { padding: 8px 12px; border: 2px solid transparent; border-radius: 999px; font: inherit; font-size: 12.5px; cursor: pointer; }
 .theme-chip.on { border-color: var(--brand); box-shadow: 0 0 0 2px #fff inset; }
 .admin-hint { margin: 8px 0 0; font-size: 12px; color: #6b5b50; }
+ 
+/* ===================== continuous menu ===================== */
+.menu-part-title {
+  scroll-margin-top: var(--nav-h, 120px);
+  margin: 30px 0 0; padding-bottom: 4px; border-bottom: 3px solid var(--brand);
+  font-family: var(--display); font-size: 42px; font-weight: 400; line-height: 1;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--brand);
+}
+.menu-part:first-child .menu-part-title { margin-top: 14px; }
+.menu-cat { scroll-margin-top: var(--nav-h, 120px); padding-top: 22px; }
+.menu-cat-title {
+  margin: 0; font-family: var(--display); font-size: 30px; font-weight: 400; line-height: 1;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--ink);
+}
+ 

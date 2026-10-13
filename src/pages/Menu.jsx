@@ -169,10 +169,12 @@ export default function Menu() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-
-  const [sectionId, setSectionId] = useState(SECTION_META[0].id);
-  const [catId, setCatId] = useState("");
   const [search, setSearch] = useState("");
+  const [active, setActive] = useState({ part: "", cat: "" }); // what is on screen right now
+  const [navH, setNavH] = useState(120); // height of the sticky bar, so jumps stop just below it
+
+  const navRef = useRef(null);
+  const tabsRef = useRef(null);
 
   // ---- load the menu ----
   useEffect(() => {
@@ -189,18 +191,6 @@ export default function Menu() {
   }, []);
 
   const sections = useMemo(() => buildSections(rows), [rows]);
-  const section = sections.find((s) => s.id === sectionId) ?? sections[0];
-  const category = section?.categories.find((c) => c.id === catId) ?? section?.categories[0];
-
-  const pickSection = (s) => {
-    setSectionId(s.id);
-    setCatId(s.categories[0].id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-  const pickCategory = (c) => {
-    setCatId(c.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   // ---- search across the whole menu ----
   const everything = useMemo(
@@ -225,8 +215,67 @@ export default function Menu() {
       return { key: item.id, item, img: item.image, bg: theme.bg, fg: theme.fg };
     });
 
+  // ---- jumping around the long page ----
+  const goTo = (id) => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(id)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  };
+
+  // measure the sticky bar
+  useEffect(() => {
+    const measure = () => navRef.current && setNavH(navRef.current.offsetHeight);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [sections.length, q]);
+
+  // scroll-spy: work out which part and category is under the sticky bar
+  useEffect(() => {
+    if (q || !sections.length) return;
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+      const marks = Array.from(document.querySelectorAll("[data-spy]"));
+      if (!marks.length) return;
+      const line = navH + 24;
+      let current = marks[0];
+      for (const el of marks) {
+        if (el.getBoundingClientRect().top <= line) current = el;
+        else break;
+      }
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+        current = marks[marks.length - 1]; // very bottom of the page = last category
+      }
+      const next = { part: current.dataset.part, cat: current.dataset.cat };
+      setActive((prev) => (prev.part === next.part && prev.cat === next.cat ? prev : next));
+    };
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [sections, navH, q]);
+
+  const activePart = sections.find((s) => s.id === active.part) ?? sections[0];
+  const activeCat = active.cat || activePart?.categories[0]?.id;
+
+  // keep the highlighted tab in the middle of the tab row
+  useEffect(() => {
+    const box = tabsRef.current;
+    const tab = box?.querySelector('[aria-current="true"]');
+    if (box && tab) {
+      box.scrollTo({ left: tab.offsetLeft - box.clientWidth / 2 + tab.clientWidth / 2, behavior: "smooth" });
+    }
+  }, [activeCat, activePart?.id]);
+
   return (
-    <div className="menu-page">
+    <div className="menu-page" style={{ "--nav-h": `${navH}px` }}>
       <header className="header">
         <img src="/images/logo-red.png" alt="Lower Ground Coffee" className="header-logo-img" />
       </header>
@@ -256,26 +305,31 @@ export default function Menu() {
 
       {!q && popularCards.length > 0 && <PopularStrip cards={popularCards} />}
 
-      {category && (
+      {activePart && (
         <>
-          {/* Part 1: Beverages / Food  ·  Part 2: category tabs */}
+          {/* Sticky shortcuts: they jump to a place on the page and follow you as you scroll */}
           {!q && (
-            <nav className="menu-nav">
+            <nav className="menu-nav" ref={navRef}>
               <div className="menu-switch">
                 {sections.map((s) => (
-                  <button key={s.id} type="button" aria-pressed={s.id === section.id} onClick={() => pickSection(s)}>
+                  <button
+                    key={s.id}
+                    type="button"
+                    aria-pressed={s.id === activePart.id}
+                    onClick={() => goTo(`part-${s.id}`)}
+                  >
                     {s.label}
                   </button>
                 ))}
               </div>
-              <div className="menu-tabs">
-                {section.categories.map((c) => (
+              <div className="menu-tabs" ref={tabsRef}>
+                {activePart.categories.map((c) => (
                   <button
                     key={c.id}
                     type="button"
                     className="menu-tab"
-                    aria-current={c.id === category.id ? "true" : undefined}
-                    onClick={() => pickCategory(c)}
+                    aria-current={c.id === activeCat ? "true" : undefined}
+                    onClick={() => goTo(`cat-${activePart.id}-${c.id}`)}
                   >
                     {c.label}
                   </button>
@@ -296,20 +350,36 @@ export default function Menu() {
                 <p className="menu-empty">Nothing matches “{search}”.</p>
               )
             ) : (
-              <>
-                {category.note && <p className="menu-note">{category.note}</p>}
-                {category.groups.map((g, gi) => (
-                  <section className="menu-group" key={gi}>
-                    {g.name && <h2 className="menu-group-title">{g.name}</h2>}
-                    {g.note && <p className="menu-group-note">{g.note}</p>}
-                    <ul className="dish-list">
-                      {g.items.map((item) => (
-                        <Dish key={item.id} item={item} />
+              sections.map((s) => (
+                <div className="menu-part" key={s.id}>
+                  <h1
+                    className="menu-part-title"
+                    id={`part-${s.id}`}
+                    data-spy
+                    data-part={s.id}
+                    data-cat={s.categories[0].id}
+                  >
+                    {s.label}
+                  </h1>
+                  {s.categories.map((c) => (
+                    <section className="menu-cat" id={`cat-${s.id}-${c.id}`} key={c.id} data-spy data-part={s.id} data-cat={c.id}>
+                      <h2 className="menu-cat-title">{c.label}</h2>
+                      {c.note && <p className="menu-note">{c.note}</p>}
+                      {c.groups.map((g, gi) => (
+                        <div className="menu-group" key={gi}>
+                          {g.name && <h3 className="menu-group-title">{g.name}</h3>}
+                          {g.note && <p className="menu-group-note">{g.note}</p>}
+                          <ul className="dish-list">
+                            {g.items.map((item) => (
+                              <Dish key={item.id} item={item} />
+                            ))}
+                          </ul>
+                        </div>
                       ))}
-                    </ul>
-                  </section>
-                ))}
-              </>
+                    </section>
+                  ))}
+                </div>
+              ))
             )}
           </main>
         </>
