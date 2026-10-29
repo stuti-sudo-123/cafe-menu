@@ -13,6 +13,7 @@ const BLANK = {
   grp: "",
   name: "",
   description: "",
+  story: "",
   price: "",
   premium: false,
   available: true,
@@ -104,6 +105,9 @@ function DishForm({ initial, categories, groups, busy, onSave, onCancel }) {
       <label>Description (optional)</label>
       <textarea rows={2} value={f.description} onChange={(e) => set("description", e.target.value)} />
 
+      <label>Story (optional): a few lines shown when a customer taps the dish</label>
+      <textarea rows={3} value={f.story} onChange={(e) => set("story", e.target.value)} />
+
       <label>Price (₹)</label>
       <input type="number" min="0" step="1" value={f.price} onChange={(e) => set("price", e.target.value)} required />
 
@@ -165,6 +169,228 @@ function DishForm({ initial, categories, groups, busy, onSave, onCancel }) {
       <button className="btn" disabled={busy}>{busy ? "Saving..." : "Save"}</button>
       <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>
     </form>
+  );
+}
+
+/* ---------------- today's special ---------------- */
+function SpecialEditor() {
+  const [s, setS] = useState(null); // null = still loading
+  const [missing, setMissing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("todays_special")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) setMissing(true);
+        else setS({ active: data.active, title: data.title || "", details: data.details || "", price: data.price ?? "" });
+      });
+  }, []);
+
+  async function save(e) {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    setMsg("");
+    const { data, error } = await supabase
+      .from("todays_special")
+      .update({
+        active: s.active,
+        title: s.title.trim(),
+        details: s.details.trim(),
+        price: s.price === "" ? null : Number(s.price),
+      })
+      .eq("id", 1)
+      .select();
+    setBusy(false);
+    if (error || !data || data.length === 0) setErr(error ? error.message : NOT_ALLOWED);
+    else setMsg(s.active ? "Saved. It's showing on the menu now." : "Saved. It's hidden from the menu.");
+  }
+
+  if (missing) return <p className="admin-hint">Today's special isn't set up yet. Run extras_setup.sql in Supabase.</p>;
+  if (!s) return null;
+  const set = (key, value) => setS((prev) => ({ ...prev, [key]: value }));
+
+  return (
+    <div className="admin-form">
+      <h2>Today's special</h2>
+      <form onSubmit={save}>
+        <div className="check-row">
+          <label>
+            <input type="checkbox" checked={s.active} onChange={(e) => set("active", e.target.checked)} />
+            Show it at the top of the menu
+          </label>
+        </div>
+        <label>Title (e.g. Pistachio Latte)</label>
+        <input value={s.title} onChange={(e) => set("title", e.target.value)} />
+        <label>A line about it (optional)</label>
+        <textarea rows={2} value={s.details} onChange={(e) => set("details", e.target.value)} />
+        <label>Price (₹, optional)</label>
+        <input type="number" min="0" step="1" value={s.price} onChange={(e) => set("price", e.target.value)} />
+        {msg && <p className="admin-msg">{msg}</p>}
+        {err && <p className="error">{err}</p>}
+        <button className="btn" disabled={busy}>{busy ? "Saving..." : "Save special"}</button>
+      </form>
+    </div>
+  );
+}
+
+/* ---------------- Moments photos ---------------- */
+function GalleryEditor() {
+  const [photos, setPhotos] = useState(null); // null = still loading
+  const [missing, setMissing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const [file, setFile] = useState(null);
+  const [caption, setCaption] = useState("");
+  const [inputKey, setInputKey] = useState(0); // changing this clears the file box
+  const [drafts, setDrafts] = useState({}); // photo id -> caption being typed
+
+  async function load() {
+    const { data, error } = await supabase
+      .from("gallery_photos")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("id", { ascending: true });
+    if (error) setMissing(true);
+    else {
+      setMissing(false);
+      setPhotos(data || []);
+    }
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  // runs database calls, shows a message, reloads the list
+  async function exec(jobs, okMessage) {
+    setBusy(true);
+    setErr("");
+    setMsg("");
+    const results = await Promise.all(jobs);
+    setBusy(false);
+    const bad = results.find((r) => r.error || !r.data || r.data.length === 0);
+    if (bad) {
+      setErr(bad.error ? bad.error.message : NOT_ALLOWED);
+      return false;
+    }
+    if (okMessage) setMsg(okMessage);
+    await load();
+    return true;
+  }
+
+  async function addPhoto(e) {
+    e.preventDefault();
+    if (!file) {
+      setErr("Choose a photo first.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setErr("That photo is bigger than 2 MB. Please use a smaller one.");
+      return;
+    }
+    setBusy(true);
+    setErr("");
+    setMsg("");
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const path = `gallery/${Date.now()}.${ext}`;
+    const { error: upError } = await supabase.storage
+      .from("menu-images")
+      .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+    if (upError) {
+      setBusy(false);
+      setErr("Couldn't upload the photo: " + upError.message);
+      return;
+    }
+    const url = supabase.storage.from("menu-images").getPublicUrl(path).data.publicUrl;
+    const last = Math.max(0, ...photos.map((p) => p.sort_order || 0));
+    const { data, error } = await supabase
+      .from("gallery_photos")
+      .insert({ image_url: url, caption: caption.trim(), sort_order: last + 10 })
+      .select();
+    setBusy(false);
+    if (error || !data || data.length === 0) {
+      setErr(error ? error.message : NOT_ALLOWED);
+      return;
+    }
+    setFile(null);
+    setCaption("");
+    setInputKey((k) => k + 1);
+    setMsg("Photo added. It shows in Moments now.");
+    load();
+  }
+
+  const saveCaption = (p) =>
+    exec([supabase.from("gallery_photos").update({ caption: (drafts[p.id] ?? p.caption).trim() }).eq("id", p.id).select()], "Caption saved.").then(
+      (ok) => ok && setDrafts((d) => { const n = { ...d }; delete n[p.id]; return n; })
+    );
+
+  async function remove(p) {
+    if (!window.confirm("Remove this photo from Moments?")) return;
+    const ok = await exec([supabase.from("gallery_photos").delete().eq("id", p.id).select()], "Photo removed.");
+    if (ok) {
+      const stored = p.image_url.split("/menu-images/")[1]; // photos uploaded here live in the menu-images folder
+      if (stored) supabase.storage.from("menu-images").remove([decodeURIComponent(stored)]);
+    }
+  }
+
+  function move(p, dir) {
+    const other = photos[photos.findIndex((x) => x.id === p.id) + dir];
+    if (!other) return;
+    exec([
+      supabase.from("gallery_photos").update({ sort_order: other.sort_order }).eq("id", p.id).select(),
+      supabase.from("gallery_photos").update({ sort_order: p.sort_order }).eq("id", other.id).select(),
+    ]);
+  }
+
+  if (missing) return <p className="admin-hint">Moments photos aren't set up yet. Run gallery_setup.sql in Supabase.</p>;
+  if (!photos) return null;
+
+  return (
+    <div className="admin-form" style={{ marginTop: 28 }}>
+      <h2>Moments photos</h2>
+      {msg && <p className="admin-msg">{msg}</p>}
+      {err && <p className="error">{err}</p>}
+
+      <form onSubmit={addPhoto}>
+        <label>Add a photo (JPG, PNG or WebP, max 2 MB)</label>
+        <input key={inputKey} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+        <label>Caption (optional, e.g. Coffee o'clock)</label>
+        <input value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={40} />
+        <button className="btn" disabled={busy || !file}>{busy ? "Working..." : "Add photo"}</button>
+      </form>
+
+      <div className="gal-list">
+        {photos.length === 0 && <p className="admin-hint">No photos yet. The Moments section stays hidden until you add one.</p>}
+        {photos.map((p, i) => (
+          <div className="gal-item" key={p.id}>
+            <img className="gal-thumb" src={p.image_url} alt="" />
+            <div className="gal-body">
+              <input
+                value={drafts[p.id] ?? p.caption}
+                maxLength={40}
+                placeholder="Caption"
+                onChange={(e) => setDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
+              />
+              <div className="admin-item-actions">
+                {drafts[p.id] !== undefined && drafts[p.id] !== p.caption && (
+                  <button className="btn-secondary" disabled={busy} onClick={() => saveCaption(p)}>Save caption</button>
+                )}
+                <button className="btn-secondary" disabled={busy || i === 0} onClick={() => move(p, -1)} aria-label="Move earlier">▲</button>
+                <button className="btn-secondary" disabled={busy || i === photos.length - 1} onClick={() => move(p, 1)} aria-label="Move later">▼</button>
+                <button className="btn-secondary" disabled={busy} onClick={() => remove(p)}>Remove</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -243,6 +469,7 @@ export default function Admin() {
       grp: f.grp.trim() || null,
       name: f.name.trim(),
       description: f.description.trim(),
+      story: f.story.trim(),
       price: Number(f.price),
       premium: f.premium,
       available: f.available,
@@ -298,6 +525,7 @@ export default function Admin() {
     grp: r.grp || "",
     name: r.name,
     description: r.description || "",
+    story: r.story || "",
     price: r.price,
     premium: !!r.premium,
     available: r.available !== false,
@@ -315,6 +543,8 @@ export default function Admin() {
 
       {msg && <p className="admin-msg">{msg}</p>}
       {err && <p className="error">{err}</p>}
+
+      <SpecialEditor />
 
       {editing === "new" ? (
         <div className="admin-form">
@@ -406,6 +636,8 @@ export default function Admin() {
           </div>
         );
       })}
+
+      <GalleryEditor />
     </div>
   );
 }
